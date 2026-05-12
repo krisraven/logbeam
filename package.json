@@ -1,0 +1,49 @@
+{
+  "name": "logbeam",
+  "version": "0.1.0",
+  "description": "Pretty-print and interactively search log output",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "logbeam": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc && chmod +x dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "log",
+    "cli",
+    "pretty-print",
+    "tui"
+  ],
+  "author": "",
+  "funding": {
+    "type": "individual",
+    "url": "https://buymeacoffee.com/amillionbugs"
+  },
+  "license": "ISC",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist/"
+  ],
+  "dependencies": {
+    "@leeoniya/ufuzzy": "^1.0.19",
+    "chalk": "^4.1.2",
+    "clipboardy": "^5.3.1",
+    "commander": "^14.0.3",
+    "ink": "^7.0.2",
+    "ink-text-input": "^6.0.0",
+    "react": "^19.2.6"
+  },
+  "devDependencies": {
+    "@types/ink-text-input": "^2.0.5",
+    "@types/node": "^25.6.2",
+    "@types/react": "^19.2.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}
