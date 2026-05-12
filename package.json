@@ -1,6 +1,6 @@
 {
     "name": "logbeam",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "Pretty-print and interactively search log output",
     "type": "module",
     "main": "dist/index.js",
