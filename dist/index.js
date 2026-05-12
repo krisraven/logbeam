@@ -70,6 +70,10 @@ program
         });
     }
     else {
+        if (process.stdin.isTTY) {
+            console.error('Error: specify a log file or pipe log data to logbeam\nUsage: logbeam <file>  |  cat app.log | logbeam');
+            process.exit(1);
+        }
         const all = await loadEntries();
         buffer.entries = applyPreFilters(all, opts);
         render(React.createElement(App, { buffer, streaming: false }), { stdin: inkStdin });
