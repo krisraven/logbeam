@@ -5,7 +5,7 @@ import { Command } from 'commander';
 import { render } from 'ink';
 import React from 'react';
 import { loadEntries, readLines } from './input.js';
-import { tailFile } from './stream.js';
+import { streamStdin, tailFile } from './stream.js';
 import { detectFormat } from './parser.js';
 import { parseRelativeDuration, parseLevel, SEVERITY } from './filters.js';
 import { App } from './tui.js';
@@ -74,9 +74,11 @@ program
             console.error('Error: specify a log file or pipe log data to logbeam\nUsage: logbeam <file>  |  cat app.log | logbeam');
             process.exit(1);
         }
-        const all = await loadEntries();
-        buffer.entries = applyPreFilters(all, opts);
-        render(React.createElement(App, { buffer, streaming: false }), { stdin: inkStdin });
+        render(React.createElement(App, { buffer, streaming: true }), { stdin: inkStdin });
+        streamStdin((newEntries) => {
+            const filtered = applyPreFilters(newEntries, opts);
+            buffer.entries = [...buffer.entries, ...filtered].slice(-BUFFER_CAP);
+        });
     }
 });
 program.parse();
