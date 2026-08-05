@@ -42,45 +42,76 @@ logbeam app.log --since 10m
 logbeam app.log --level error --since 1h
 ```
 
+## Piping from AWS CloudWatch
+
+Use `aws logs tail` with logbeam to tail CloudWatch log groups:
+
+```bash
+PYTHONUNBUFFERED=1 aws logs tail /my/log-group --follow | logbeam
+```
+
+The `PYTHONUNBUFFERED=1` prefix is required when using `--follow`. Without it, the AWS CLI (a Python 3 program) switches to block-buffered output when writing to a pipe — it accumulates ~8 KB before flushing, so logbeam receives nothing until the buffer fills or the process exits. `PYTHONUNBUFFERED=1` forces Python to flush immediately after each write.
+
+Note: `stdbuf -oL` is commonly suggested for this problem but **does not work with Python 3** — Python 3 uses its own I/O layer that bypasses C stdio, so `stdbuf`'s libc patch has no effect. Use `PYTHONUNBUFFERED=1` instead.
+
+This only affects Python-based CLI tools. Other common sources (`tail -f`, `kubectl logs -f`, `docker logs -f`) are unaffected.
+
+```bash
+# Add to ~/.zshrc or ~/.bashrc for convenience
+alias logbeam-tail='PYTHONUNBUFFERED=1 aws logs tail'
+
+# Then:
+logbeam-tail /my/log-group --follow | logbeam
+```
+
 ## CLI Flags
 
-| Flag | Description |
-|------|-------------|
-| `--level <level>` | Minimum log level to show: `trace`, `debug`, `info`, `warn`, `error` |
+| Flag                 | Description                                                                             |
+| -------------------- | --------------------------------------------------------------------------------------- |
+| `--level <level>`    | Minimum log level to show: `trace`, `debug`, `info`, `warn`, `error`                    |
 | `--since <duration>` | Only show logs from the last N seconds/minutes/hours/days e.g. `30s`, `10m`, `2h`, `1d` |
 
 ## TUI Controls
 
-| Key | Action |
-|-----|--------|
-| Type | Filter logs (search is focused by default) |
-| `Enter` / `Esc` | Switch to navigation mode |
-| `/` | Focus search bar |
-| `↑` / `↓` | Move selection up/down |
-| `Page Up` / `Page Down` | Jump a full page |
-| `e` | Toggle errors-only filter |
-| `w` | Toggle warn+ filter (warn and above) |
-| `c` | Copy selected entry's raw line to clipboard |
-| `x` | Export current filtered results to a timestamped `.log` file |
-| `f` | Resume following live output (re-enable auto-scroll) |
-| `q` | Quit |
-| `Ctrl+C` | Force quit |
+| Key                     | Action                                                       |
+| ----------------------- | ------------------------------------------------------------ |
+| Type                    | Filter logs (search is focused by default)                   |
+| `Enter` / `Esc`         | Switch to navigation mode                                    |
+| `/`                     | Focus search bar                                             |
+| `↑` / `↓`               | Move selection up/down                                       |
+| `Page Up` / `Page Down` | Jump a full page                                             |
+| `e`                     | Toggle errors-only filter                                    |
+| `w`                     | Toggle warn+ filter (warn and above)                         |
+| `c`                     | Copy selected entry's raw line to clipboard                  |
+| `x`                     | Export current filtered results to a timestamped `.log` file |
+| `f`                     | Resume following live output (re-enable auto-scroll)         |
+| `q`                     | Quit                                                         |
+| `Ctrl+C`                | Force quit                                                   |
 
 ## Log Formats
 
 logbeam auto-detects the format by sampling the first 10 lines and picking the best match with a confidence threshold. Supported formats:
 
 **JSON**
+
 ```json
-{"timestamp":"2026-05-11T06:00:00Z","level":"error","message":"Request failed","traceId":"abc-123","statusCode":500}
+{
+    "timestamp": "2026-05-11T06:00:00Z",
+    "level": "error",
+    "message": "Request failed",
+    "traceId": "abc-123",
+    "statusCode": 500
+}
 ```
 
 **logfmt**
+
 ```
 time=2026-05-11T06:00:00Z level=error msg="Request failed" traceId=abc-123 statusCode=500
 ```
 
 **Plain text**
+
 ```
 2026-05-11 06:00:00 ERROR Request failed
 ```
@@ -97,13 +128,13 @@ In pipe mode, each log entry is rendered on a single line with colourised level 
 
 Level colours:
 
-| Level | Colour |
-|-------|--------|
-| error / fatal | Red |
-| warn | Yellow |
-| info | Cyan |
-| debug | Gray |
-| trace | Magenta |
+| Level         | Colour  |
+| ------------- | ------- |
+| error / fatal | Red     |
+| warn          | Yellow  |
+| info          | Cyan    |
+| debug         | Gray    |
+| trace         | Magenta |
 
 ## Tech Stack
 
@@ -117,3 +148,16 @@ Level colours:
 - [ ] Absolute timestamp support for `--since` (e.g. `--since 2026-05-11T06:00:00Z`)
 - [ ] Highlight matched search terms in the log list
 - [ ] Custom colour themes
+
+## Changelog
+
+### 0.1.3
+
+**Fix: live piped stdin never rendered**
+When logbeam received a live stream via stdin (e.g. `aws logs tail --follow | logbeam`), it called `loadEntries()` internally, which reads stdin until EOF before rendering. Live streams never send EOF, so the TUI never launched. Replaced with `streamStdin()`, which feeds entries into the TUI as they arrive without waiting for the stream to close.
+
+**Fix: sparse streams stalled before showing any entries**
+`streamStdin` buffered the first 10 lines before detecting log format. On a slow or sparse stream this meant logbeam would appear blank for a long time (or forever if fewer than 10 lines arrived while the stream stayed open). It now detects format after a 1-second pause with whatever lines it has, so the first entry appears within a second of arriving.
+
+**Fix: small files piped to logbeam showed nothing**
+When a file with fewer than 10 lines was piped in (`cat tiny.log | logbeam`), `streamStdin` never reached its sample threshold and silently dropped all buffered lines on stream close. Added a close-event handler that flushes and detects format from whatever has been buffered.

@@ -85,9 +85,11 @@ program
         console.error('Error: specify a log file or pipe log data to logbeam\nUsage: logbeam <file>  |  cat app.log | logbeam');
         process.exit(1);
       }
-      const all = await loadEntries();
-      buffer.entries = applyPreFilters(all, opts);
-      render(React.createElement(App, { buffer, streaming: false }), { stdin: inkStdin });
+      render(React.createElement(App, { buffer, streaming: true }), { stdin: inkStdin });
+      streamStdin((newEntries) => {
+        const filtered = applyPreFilters(newEntries, opts);
+        buffer.entries = [...buffer.entries, ...filtered].slice(-BUFFER_CAP);
+      });
     }
   });
 
