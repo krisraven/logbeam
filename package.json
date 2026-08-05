@@ -10,7 +10,9 @@
     "scripts": {
         "build": "tsc && chmod +x dist/index.js",
         "dev": "ts-node src/index.ts",
-        "start": "node dist/index.js"
+        "start": "node dist/index.js",
+        "generate-logs": "node scripts/generate-cw-logs.mjs",
+        "generate-logs:local": "node scripts/generate-cw-logs.mjs --local"
     },
     "keywords": [
         "log",
@@ -18,7 +20,7 @@
         "pretty-print",
         "tui"
     ],
-    "author": "",
+    "author": "Kris Raven",
     "repository": {
         "type": "git",
         "url": "git+ssh://git@github.com/krisraven/logbeam.git"
@@ -44,6 +46,7 @@
         "react": "^19.2.6"
     },
     "devDependencies": {
+        "@aws-sdk/client-cloudwatch-logs": "^3",
         "@types/ink-text-input": "^2.0.5",
         "@types/node": "^25.6.2",
         "@types/react": "^19.2.14",
