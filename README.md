@@ -179,6 +179,11 @@ When testing changes, check pipe mode and TUI mode separately, and try all three
 
 ### 0.1.3
 
+**Test: add new testing tool**
+Added `scripts/generate-cw-logs.mjs` to generate synthetic logs used for testing.
+- --local mode: writes fake NDJSON/logfmt/plain log lines straight to stdout, for piping into logbeam without needing AWS.
+- (default) CloudWatch mode: pushes batches to a real CloudWatch Logs group/stream via @aws-sdk/client-cloudwatch-logs, so you can test against aws logs tail --follow | logbeam for real.
+
 **Fix: live piped stdin never rendered**
 When logbeam received a live stream via stdin (e.g. `aws logs tail --follow | logbeam`), it called `loadEntries()` internally, which reads stdin until EOF before rendering. Live streams never send EOF, so the TUI never launched. Replaced with `streamStdin()`, which feeds entries into the TUI as they arrive without waiting for the stream to close.
 
