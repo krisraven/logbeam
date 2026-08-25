@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as readline from 'readline';
-import { detectFormat, parseLine } from './parser.js';
+import { detectFormat, parseLine } from '../core/parser.js';
 const SAMPLE_SIZE = 10;
 async function streamToLines(filePath) {
     const stream = filePath ? fs.createReadStream(filePath) : process.stdin;
@@ -17,7 +17,7 @@ export async function loadEntries(filePath) {
     return lines.map(l => parseLine(l, format)).filter((e) => e !== null);
 }
 export async function readLines(filePath) {
-    const { renderEntry } = await import('./renderer.js');
+    const { renderEntry } = await import('../output/renderer.js');
     const stream = filePath
         ? fs.createReadStream(filePath)
         : process.stdin;

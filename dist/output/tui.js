@@ -3,7 +3,8 @@ import * as fs from "fs";
 import { Box, Text, useInput, useApp } from "ink";
 import TextInput from "ink-text-input";
 import uFuzzy from "@leeoniya/ufuzzy";
-import { SEVERITY } from "./filters.js";
+import { SEVERITY } from "../core/filters.js";
+import { BUFFER_CAP } from "../constants.js";
 const LEVEL_COLOURS = {
     error: "red",
     warn: "yellow",
@@ -56,7 +57,6 @@ function toSegments(str, fieldStart, ranges) {
         segs.push({ text: str.slice(pos), highlight: false });
     return segs;
 }
-const BUFFER_CAP = 10000;
 function LogLine({ entry, selected, ranges }) {
     const colour = LEVEL_COLOURS[entry.level];
     const label = LEVEL_LABELS[entry.level];

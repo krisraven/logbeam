@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as readline from 'readline';
-import { detectFormat, parseLine } from './parser.js';
-import type { LogEntry } from './parser.js';
+import { detectFormat, parseLine } from '../core/parser.js';
+import type { LogEntry } from '../core/parser.js';
 
 const SAMPLE_SIZE = 10;
 
@@ -10,8 +10,21 @@ type OnNewEntries = (entries: LogEntry[]) => void;
 export function streamStdin(onNewEntries: OnNewEntries): () => void {
   const lineBuffer: string[] = [];
   let format: ReturnType<typeof detectFormat> | null = null;
+  let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
   const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
+
+  const flushBuffer = () => {
+    if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+    if (format === null && lineBuffer.length > 0) {
+      format = detectFormat(lineBuffer);
+      const entries = lineBuffer
+        .map(l => parseLine(l, format!))
+        .filter((e): e is LogEntry => e !== null);
+      lineBuffer.length = 0;
+      if (entries.length > 0) onNewEntries(entries);
+    }
+  };
 
   rl.on('line', (line) => {
     if (!line.trim()) return;
@@ -19,12 +32,12 @@ export function streamStdin(onNewEntries: OnNewEntries): () => void {
 
     if (format === null) {
       if (lineBuffer.length >= SAMPLE_SIZE) {
-        format = detectFormat(lineBuffer.slice(0, SAMPLE_SIZE));
-        const entries = lineBuffer
-          .map(l => parseLine(l, format!))
-          .filter((e): e is LogEntry => e !== null);
-        lineBuffer.length = 0;
-        if (entries.length > 0) onNewEntries(entries);
+        flushBuffer();
+      } else {
+        // Fewer than SAMPLE_SIZE lines — flush after 1s of inactivity so live
+        // streams with sparse events don't stall waiting for the sample window.
+        if (flushTimer) clearTimeout(flushTimer);
+        flushTimer = setTimeout(flushBuffer, 1000);
       }
     } else {
       const entry = parseLine(line, format);
@@ -32,7 +45,11 @@ export function streamStdin(onNewEntries: OnNewEntries): () => void {
     }
   });
 
-  return () => rl.close();
+  rl.on('close', () => {
+    flushBuffer();
+  });
+
+  return () => { if (flushTimer) clearTimeout(flushTimer); rl.close(); };
 }
 
 export function tailFile(
