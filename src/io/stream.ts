@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as readline from 'readline';
-import { detectFormat, parseLine } from './parser.js';
-import type { LogEntry } from './parser.js';
+import { detectFormat, parseLine } from '../core/parser.js';
+import type { LogEntry } from '../core/parser.js';
 
 const SAMPLE_SIZE = 10;
 

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as readline from 'readline';
-import { detectFormat, parseLine } from './parser.js';
-import type { LogEntry } from './parser.js';
+import { detectFormat, parseLine } from '../core/parser.js';
+import type { LogEntry } from '../core/parser.js';
 
 const SAMPLE_SIZE = 10;
 
@@ -21,7 +21,7 @@ export async function loadEntries(filePath?: string): Promise<LogEntry[]> {
 }
 
 export async function readLines(filePath?: string): Promise<void> {
-  const { renderEntry } = await import('./renderer.js');
+  const { renderEntry } = await import('../output/renderer.js');
 
   const stream = filePath
     ? fs.createReadStream(filePath)

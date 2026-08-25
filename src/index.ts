@@ -4,17 +4,21 @@ import * as tty from 'tty';
 import { Command } from 'commander';
 import { render } from 'ink';
 import React from 'react';
-import { loadEntries, readLines } from './input.js';
-import { streamStdin, tailFile } from './stream.js';
-import { detectFormat } from './parser.js';
-import { parseRelativeDuration, parseLevel, SEVERITY } from './filters.js';
-import { App } from './tui.js';
-import type { LiveBuffer } from './tui.js';
-import type { LogEntry } from './parser.js';
+import { loadEntries, readLines } from './io/input.js';
+import { streamStdin, tailFile } from './io/stream.js';
+import { detectFormat } from './core/parser.js';
+import { parseRelativeDuration, parseLevel, SEVERITY } from './core/filters.js';
+import { App } from './output/tui.js';
+import type { LiveBuffer } from './output/tui.js';
+import type { LogEntry } from './core/parser.js';
+import { BUFFER_CAP } from './constants.js';
 
-const BUFFER_CAP = 10000;
+interface PreFilterOptions {
+  level?: string;
+  since?: string;
+}
 
-function applyPreFilters(entries: LogEntry[], opts: { level?: string; since?: string }): LogEntry[] {
+function applyPreFilters(entries: LogEntry[], opts: PreFilterOptions): LogEntry[] {
   let result = entries;
 
   if (opts.level) {
@@ -38,6 +42,69 @@ function applyPreFilters(entries: LogEntry[], opts: { level?: string; since?: st
   return result;
 }
 
+// When stdin is piped, reopen /dev/tty so ink can still capture keyboard input.
+// Returns null if /dev/tty is unavailable (e.g. Windows), signalling callers to fall back to pipe mode.
+function resolveInkStdin(): NodeJS.ReadStream | null {
+  if (process.stdin.isTTY) return process.stdin;
+  try {
+    const fd = fs.openSync('/dev/tty', 'r+');
+    return new tty.ReadStream(fd);
+  } catch {
+    return null;
+  }
+}
+
+function startInteractiveApp(inkStdin: NodeJS.ReadStream, initialEntries: LogEntry[] = []): LiveBuffer {
+  const buffer: LiveBuffer = { entries: initialEntries };
+  render(React.createElement(App, { buffer, streaming: true }), { stdin: inkStdin });
+  return buffer;
+}
+
+async function runFileMode(file: string, opts: PreFilterOptions, inkStdin: NodeJS.ReadStream): Promise<void> {
+  const all = await loadEntries(file);
+  const startPosition = fs.statSync(file).size;
+  const format = detectFormat(all.slice(0, 10).map(e => e.raw));
+
+  const buffer = startInteractiveApp(inkStdin, applyPreFilters(all, opts));
+
+  tailFile(file, startPosition, format, (newEntries) => {
+    const filtered = applyPreFilters(newEntries, opts);
+    buffer.entries = [...buffer.entries, ...filtered].slice(-BUFFER_CAP);
+  });
+}
+
+function runStdinMode(opts: PreFilterOptions, inkStdin: NodeJS.ReadStream): void {
+  if (process.stdin.isTTY) {
+    console.error('Error: specify a log file or pipe log data to logbeam\nUsage: logbeam <file>  |  cat app.log | logbeam');
+    process.exit(1);
+  }
+
+  const buffer = startInteractiveApp(inkStdin);
+  streamStdin((newEntries) => {
+    const filtered = applyPreFilters(newEntries, opts);
+    buffer.entries = [...buffer.entries, ...filtered].slice(-BUFFER_CAP);
+  });
+}
+
+async function main(file: string | undefined, opts: PreFilterOptions): Promise<void> {
+  if (!process.stdout.isTTY) {
+    await readLines(file);
+    return;
+  }
+
+  const inkStdin = resolveInkStdin();
+  if (!inkStdin) {
+    await readLines(file);
+    return;
+  }
+
+  if (file) {
+    await runFileMode(file, opts, inkStdin);
+  } else {
+    runStdinMode(opts, inkStdin);
+  }
+}
+
 const program = new Command();
 
 program
@@ -47,50 +114,6 @@ program
   .argument('[file]', 'log file to read (omit to read from stdin)')
   .option('--level <level>', 'minimum log level to show (trace|debug|info|warn|error)')
   .option('--since <duration>', 'only show logs from the last duration e.g. 10m, 1h, 2d')
-  .action(async (file?: string, opts: { level?: string; since?: string } = {}) => {
-    if (!process.stdout.isTTY) {
-      await readLines(file);
-      return;
-    }
-
-    // When stdin is piped, reopen /dev/tty so ink can still capture keyboard input.
-    // Falls back to pipe mode if /dev/tty is unavailable (e.g. Windows).
-    let inkStdin: NodeJS.ReadStream = process.stdin;
-    if (!process.stdin.isTTY) {
-      try {
-        const fd = fs.openSync('/dev/tty', 'r+');
-        inkStdin = new tty.ReadStream(fd);
-      } catch {
-        await readLines(file);
-        return;
-      }
-    }
-
-    const buffer: LiveBuffer = { entries: [] };
-
-    if (file) {
-      const all = await loadEntries(file);
-      buffer.entries = applyPreFilters(all, opts);
-      const startPosition = fs.statSync(file).size;
-      const format = detectFormat(all.slice(0, 10).map(e => e.raw));
-
-      render(React.createElement(App, { buffer, streaming: true }), { stdin: inkStdin });
-
-      tailFile(file, startPosition, format, (newEntries) => {
-        const filtered = applyPreFilters(newEntries, opts);
-        buffer.entries = [...buffer.entries, ...filtered].slice(-BUFFER_CAP);
-      });
-    } else {
-      if (process.stdin.isTTY) {
-        console.error('Error: specify a log file or pipe log data to logbeam\nUsage: logbeam <file>  |  cat app.log | logbeam');
-        process.exit(1);
-      }
-      render(React.createElement(App, { buffer, streaming: true }), { stdin: inkStdin });
-      streamStdin((newEntries) => {
-        const filtered = applyPreFilters(newEntries, opts);
-        buffer.entries = [...buffer.entries, ...filtered].slice(-BUFFER_CAP);
-      });
-    }
-  });
+  .action((file?: string, opts: PreFilterOptions = {}) => main(file, opts));
 
 program.parse();

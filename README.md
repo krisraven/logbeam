@@ -71,6 +71,8 @@ logbeam-tail /my/log-group --follow | logbeam
 | `--level <level>`    | Minimum log level to show: `trace`, `debug`, `info`, `warn`, `error`                    |
 | `--since <duration>` | Only show logs from the last N seconds/minutes/hours/days e.g. `30s`, `10m`, `2h`, `1d` |
 
+**Known limitation:** `--level` and `--since` currently only apply in the interactive TUI. In pipe mode (output not a TTY, e.g. `logbeam app.log | grep foo`), both flags are ignored and every line is printed.
+
 ## TUI Controls
 
 | Key                     | Action                                                       |
@@ -142,6 +144,30 @@ Level colours:
 - [uFuzzy](https://github.com/leeoniya/uFuzzy) — high-performance fuzzy search
 - [commander](https://github.com/tj/commander.js) — CLI argument parsing
 - [chalk](https://github.com/chalk/chalk) — terminal colours (pipe mode)
+
+## Testing
+
+There's no automated test suite yet. Canges are verified manually against a build (`npm run build`, then `npm start` / `node dist/index.js`):
+
+**Static fixtures.** `test-json.log`, `test-logfmt.log`, and `test-plain.log` in the repo root each contain 100 sample lines in one of the three supported formats. Use them to sanity-check parsing and rendering:
+
+```bash
+# Pipe mode — check colourised output and field extraction
+cat test-json.log | npm start
+cat test-logfmt.log | npm start
+cat test-plain.log | npm start
+
+# TUI mode — check search, filters, and the detail panel (run in a real terminal, not piped)
+node dist/index.js test-json.log
+```
+
+**Synthetic live streams.** `scripts/generate-cw-logs.mjs --local` generates fake log lines on the fly, useful for exercising streaming/tailing behaviour that the static fixtures can't (sparse output, live stdin, following mode):
+
+```bash
+node scripts/generate-cw-logs.mjs --local --count 0 --interval 500 | npm start
+```
+
+When testing changes, check pipe mode and TUI mode separately, and try all three log formats — format-detection bugs have historically only shown up in specific combinations (see Changelog).
 
 ## Roadmap
 

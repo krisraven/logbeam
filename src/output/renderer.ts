@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import type { LogEntry, LogLevel } from './parser.js';
+import type { LogEntry, LogLevel } from '../core/parser.js';
 
 const LEVEL_COLOURS: Record<LogLevel, (s: string) => string> = {
   error: chalk.red.bold,

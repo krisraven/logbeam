@@ -1,0 +1,100 @@
+2026-06-26T11:13:48.634Z [INFO ] user user-7723 authenticated  service=api-gateway userId=user-7723 duration=565ms
+2026-06-26T11:13:48.717Z [INFO ] user user-2891 authenticated  service=api-gateway userId=user-2891 duration=512ms
+2026-06-26T11:13:48.938Z [DEBUG] cache miss for key rayeki  service=notifier userId=user-7723 duration=206ms
+2026-06-26T11:13:49.044Z [DEBUG] cache miss for key e4hj1v  service=scheduler userId=user-2891 duration=151ms
+2026-06-26T11:13:49.195Z [INFO ] user user-7723 authenticated  service=api-gateway userId=user-7723 duration=675ms
+2026-06-26T11:13:49.434Z [DEBUG] cache miss for key 2fkzri  service=notifier userId=user-1042 duration=303ms
+2026-06-26T11:13:49.526Z [INFO ] user user-3847 authenticated  service=scheduler userId=user-3847 duration=456ms
+2026-06-26T11:13:49.635Z [DEBUG] cache miss for key gknotg  service=auth-service userId=user-2891 duration=434ms
+2026-06-26T11:13:49.721Z [INFO ] GET /api/products 200  service=scheduler userId=user-1042 duration=734ms
+2026-06-26T11:13:49.926Z [WARN ] slow response on /api/auth/login (121ms)  service=scheduler userId=user-7723 duration=121ms
+2026-06-26T11:13:50.169Z [DEBUG] cache miss for key abupu9  service=auth-service userId=user-2891 duration=802ms
+2026-06-26T11:13:50.377Z [INFO ] session refreshed for user-3847  service=api-gateway userId=user-3847 duration=372ms
+2026-06-26T11:13:50.499Z [DEBUG] cache miss for key iqkg3w  service=notifier userId=user-1042 duration=64ms
+2026-06-26T11:13:50.683Z [DEBUG] cache miss for key 87qnhb  service=notifier userId=user-3847 duration=534ms
+2026-06-26T11:13:50.798Z [WARN ] slow response on /api/users (407ms)  service=auth-service userId=user-5519 duration=407ms
+2026-06-26T11:13:50.965Z [DEBUG] cache miss for key xjyz6v  service=scheduler userId=user-5519 duration=735ms
+2026-06-26T11:13:51.035Z [INFO ] GET /api/products 200  service=scheduler userId=user-2891 duration=47ms
+2026-06-26T11:13:51.183Z [ERROR] RateLimitError: too many requests from this IP  service=scheduler userId=user-1042 duration=178ms
+2026-06-26T11:13:51.347Z [INFO ] job completed in 152ms  service=auth-service userId=user-5519 duration=152ms
+2026-06-26T11:13:51.407Z [INFO ] session refreshed for user-7723  service=auth-service userId=user-7723 duration=270ms
+2026-06-26T11:13:51.518Z [INFO ] job completed in 767ms  service=auth-service userId=user-1042 duration=767ms
+2026-06-26T11:13:51.618Z [INFO ] session refreshed for user-5519  service=scheduler userId=user-5519 duration=28ms
+2026-06-26T11:13:51.733Z [DEBUG] cache miss for key n1mai1  service=api-gateway userId=user-5519 duration=235ms
+2026-06-26T11:13:51.867Z [INFO ] GET /api/health 200  service=api-gateway userId=user-5519 duration=391ms
+2026-06-26T11:13:51.933Z [DEBUG] cache miss for key r9jmc4  service=auth-service userId=user-1042 duration=779ms
+2026-06-26T11:13:52.065Z [INFO ] POST /api/orders 201  service=auth-service userId=user-7723 duration=89ms
+2026-06-26T11:13:52.188Z [INFO ] user user-3847 authenticated  service=scheduler userId=user-3847 duration=204ms
+2026-06-26T11:13:52.323Z [ERROR] ECONNREFUSED: connection to db refused  service=scheduler userId=user-3847 duration=755ms
+2026-06-26T11:13:52.557Z [INFO ] job completed in 477ms  service=api-gateway userId=user-2891 duration=477ms
+2026-06-26T11:13:52.780Z [ERROR] NotFoundError: resource does not exist  service=api-gateway userId=user-7723 duration=784ms
+2026-06-26T11:13:52.880Z [DEBUG] cache miss for key 98thys  service=scheduler userId=user-5519 duration=907ms
+2026-06-26T11:13:53.066Z [INFO ] GET /api/health 200  service=scheduler userId=user-5519 duration=851ms
+2026-06-26T11:13:53.158Z [WARN ] slow response on /api/users (386ms)  service=notifier userId=user-7723 duration=386ms
+2026-06-26T11:13:53.282Z [INFO ] job completed in 563ms  service=notifier userId=user-2891 duration=563ms
+2026-06-26T11:13:53.351Z [DEBUG] cache miss for key fzkq8x  service=auth-service userId=user-7723 duration=626ms
+2026-06-26T11:13:53.524Z [DEBUG] cache miss for key prkfzc  service=scheduler userId=user-7723 duration=555ms
+2026-06-26T11:13:53.622Z [DEBUG] cache miss for key typb93  service=auth-service userId=user-3847 duration=312ms
+2026-06-26T11:13:53.675Z [DEBUG] cache miss for key la9ac1  service=notifier userId=user-1042 duration=159ms
+2026-06-26T11:13:53.885Z [INFO ] job completed in 462ms  service=api-gateway userId=user-1042 duration=462ms
+2026-06-26T11:13:54.101Z [DEBUG] cache miss for key l2ndm0  service=scheduler userId=user-5519 duration=646ms
+2026-06-26T11:13:54.177Z [INFO ] session refreshed for user-1042  service=notifier userId=user-1042 duration=32ms
+2026-06-26T11:13:54.294Z [INFO ] GET /api/orders 200  service=data-processor userId=user-7723 duration=498ms
+2026-06-26T11:13:54.439Z [INFO ] GET /api/products 200  service=notifier userId=user-5519 duration=528ms
+2026-06-26T11:13:54.660Z [INFO ] POST /api/orders 201  service=api-gateway userId=user-3847 duration=579ms
+2026-06-26T11:13:54.887Z [INFO ] user user-7723 authenticated  service=api-gateway userId=user-7723 duration=813ms
+2026-06-26T11:13:55.080Z [INFO ] user user-3847 authenticated  service=auth-service userId=user-3847 duration=511ms
+2026-06-26T11:13:55.215Z [DEBUG] cache miss for key tt02gk  service=scheduler userId=user-2891 duration=193ms
+2026-06-26T11:13:55.381Z [DEBUG] cache miss for key yhxarr  service=data-processor userId=user-5519 duration=504ms
+2026-06-26T11:13:55.531Z [INFO ] session refreshed for user-1042  service=auth-service userId=user-1042 duration=276ms
+2026-06-26T11:13:55.772Z [INFO ] POST /api/products 201  service=auth-service userId=user-3847 duration=802ms
+2026-06-26T11:13:56.001Z [INFO ] GET /api/orders 200  service=api-gateway userId=user-2891 duration=565ms
+2026-06-26T11:13:56.228Z [DEBUG] cache miss for key 6glsk1  service=api-gateway userId=user-2891 duration=577ms
+2026-06-26T11:13:56.341Z [DEBUG] cache miss for key 2anid8  service=api-gateway userId=user-2891 duration=852ms
+2026-06-26T11:13:56.522Z [INFO ] GET /api/users 200  service=notifier userId=user-3847 duration=573ms
+2026-06-26T11:13:56.649Z [DEBUG] cache miss for key iqs4g5  service=scheduler userId=user-5519 duration=55ms
+2026-06-26T11:13:56.805Z [INFO ] GET /api/health 200  service=scheduler userId=user-3847 duration=846ms
+2026-06-26T11:13:56.868Z [INFO ] POST /api/users 201  service=api-gateway userId=user-1042 duration=651ms
+2026-06-26T11:13:57.097Z [WARN ] slow response on /api/orders (410ms)  service=scheduler userId=user-5519 duration=410ms
+2026-06-26T11:13:57.300Z [TRACE] entering middleware chain for /api/auth/login  service=data-processor userId=user-1042 duration=439ms
+2026-06-26T11:13:57.352Z [INFO ] POST /api/orders 201  service=notifier userId=user-7723 duration=602ms
+2026-06-26T11:13:57.521Z [ERROR] ValidationError: email field is required  service=notifier userId=user-7723 duration=499ms
+2026-06-26T11:13:57.725Z [DEBUG] cache miss for key zqo9da  service=api-gateway userId=user-3847 duration=603ms
+2026-06-26T11:13:57.870Z [ERROR] NotFoundError: resource does not exist  service=data-processor userId=user-5519 duration=604ms
+2026-06-26T11:13:57.945Z [DEBUG] cache miss for key 68f0vr  service=notifier userId=user-2891 duration=559ms
+2026-06-26T11:13:58.145Z [INFO ] POST /api/products 201  service=notifier userId=user-2891 duration=291ms
+2026-06-26T11:13:58.286Z [TRACE] entering middleware chain for /api/auth/login  service=scheduler userId=user-1042 duration=527ms
+2026-06-26T11:13:58.344Z [WARN ] slow response on /api/auth/login (738ms)  service=data-processor userId=user-5519 duration=738ms
+2026-06-26T11:13:58.562Z [INFO ] POST /api/users 201  service=scheduler userId=user-2891 duration=796ms
+2026-06-26T11:13:58.790Z [WARN ] slow response on /api/users (794ms)  service=scheduler userId=user-7723 duration=794ms
+2026-06-26T11:13:58.945Z [INFO ] GET /api/users 200  service=data-processor userId=user-5519 duration=526ms
+2026-06-26T11:13:59.002Z [INFO ] GET /api/users 200  service=api-gateway userId=user-7723 duration=234ms
+2026-06-26T11:13:59.152Z [TRACE] entering middleware chain for /api/orders  service=scheduler userId=user-2891 duration=257ms
+2026-06-26T11:13:59.250Z [DEBUG] cache miss for key 78y3du  service=scheduler userId=user-5519 duration=336ms
+2026-06-26T11:13:59.434Z [INFO ] GET /api/users 200  service=scheduler userId=user-5519 duration=460ms
+2026-06-26T11:13:59.655Z [INFO ] GET /api/auth/login 200  service=notifier userId=user-3847 duration=466ms
+2026-06-26T11:13:59.888Z [INFO ] POST /api/products 201  service=auth-service userId=user-1042 duration=240ms
+2026-06-26T11:14:00.011Z [INFO ] session refreshed for user-3847  service=auth-service userId=user-3847 duration=850ms
+2026-06-26T11:14:00.110Z [DEBUG] cache miss for key uonhca  service=auth-service userId=user-2891 duration=598ms
+2026-06-26T11:14:00.260Z [WARN ] slow response on /api/products (682ms)  service=api-gateway userId=user-3847 duration=682ms
+2026-06-26T11:14:00.488Z [TRACE] entering middleware chain for /api/health  service=data-processor userId=user-7723 duration=265ms
+2026-06-26T11:14:00.616Z [INFO ] GET /api/auth/login 200  service=api-gateway userId=user-1042 duration=836ms
+2026-06-26T11:14:00.784Z [DEBUG] cache miss for key ruhsot  service=api-gateway userId=user-1042 duration=276ms
+2026-06-26T11:14:01.001Z [INFO ] GET /api/health 200  service=api-gateway userId=user-7723 duration=602ms
+2026-06-26T11:14:01.119Z [DEBUG] cache miss for key e5z90b  service=auth-service userId=user-7723 duration=275ms
+2026-06-26T11:14:01.244Z [INFO ] session refreshed for user-5519  service=auth-service userId=user-5519 duration=88ms
+2026-06-26T11:14:01.456Z [DEBUG] cache miss for key xzqaid  service=notifier userId=user-1042 duration=732ms
+2026-06-26T11:14:01.669Z [DEBUG] cache miss for key p42xhl  service=data-processor userId=user-5519 duration=425ms
+2026-06-26T11:14:01.795Z [INFO ] GET /api/health 200  service=api-gateway userId=user-1042 duration=818ms
+2026-06-26T11:14:01.974Z [INFO ] user user-7723 authenticated  service=data-processor userId=user-7723 duration=437ms
+2026-06-26T11:14:02.025Z [TRACE] entering middleware chain for /api/products  service=notifier userId=user-3847 duration=459ms
+2026-06-26T11:14:02.253Z [DEBUG] cache miss for key 1nan8k  service=auth-service userId=user-3847 duration=114ms
+2026-06-26T11:14:02.422Z [TRACE] entering middleware chain for /api/auth/login  service=api-gateway userId=user-3847 duration=637ms
+2026-06-26T11:14:02.586Z [ERROR] ValidationError: email field is required  service=notifier userId=user-2891 duration=869ms
+2026-06-26T11:14:02.784Z [INFO ] session refreshed for user-7723  service=scheduler userId=user-7723 duration=438ms
+2026-06-26T11:14:02.915Z [INFO ] GET /api/health 200  service=data-processor userId=user-1042 duration=27ms
+2026-06-26T11:14:03.120Z [INFO ] POST /api/orders 201  service=auth-service userId=user-5519 duration=191ms
+2026-06-26T11:14:03.189Z [INFO ] GET /api/auth/login 200  service=auth-service userId=user-1042 duration=471ms
+2026-06-26T11:14:03.360Z [INFO ] user user-3847 authenticated  service=api-gateway userId=user-3847 duration=624ms
+2026-06-26T11:14:03.538Z [ERROR] RateLimitError: too many requests from this IP  service=data-processor userId=user-7723 duration=874ms
+2026-06-26T11:14:03.660Z [INFO ] job completed in 435ms  service=api-gateway userId=user-5519 duration=435ms

@@ -9,8 +9,9 @@ import * as fs from "fs";
 import { Box, Text, useInput, useApp } from "ink";
 import TextInput from "ink-text-input";
 import uFuzzy from "@leeoniya/ufuzzy";
-import type { LogEntry, LogLevel } from "./parser.js";
-import { SEVERITY } from "./filters.js";
+import type { LogEntry, LogLevel } from "../core/parser.js";
+import { SEVERITY } from "../core/filters.js";
+import { BUFFER_CAP } from "../constants.js";
 
 const LEVEL_COLOURS: Record<LogLevel, string> = {
     error: "red",
@@ -66,8 +67,6 @@ function toSegments(str: string, fieldStart: number, ranges: number[] | null): S
     if (pos < str.length) segs.push({ text: str.slice(pos), highlight: false });
     return segs;
 }
-
-const BUFFER_CAP = 10000;
 
 export interface LiveBuffer {
     entries: LogEntry[];
