@@ -134,12 +134,6 @@ export function App({ buffer, streaming = false }) {
         }, 100);
         return () => clearInterval(timer);
     }, [buffer, streaming]);
-    useEffect(() => {
-        if (!following || !streaming)
-            return;
-        setSelected(entries.length - 1);
-        setOffset(Math.max(0, entries.length - VISIBLE_ROWS));
-    }, [entries.length, following, streaming]);
     const showStatus = useCallback((msg) => {
         if (statusTimer.current)
             clearTimeout(statusTimer.current);
@@ -166,6 +160,12 @@ export function App({ buffer, streaming = false }) {
     }, [debouncedQuery, levelFiltered, haystack]);
     const filtered = filteredResult.entries;
     const filteredRanges = filteredResult.ranges;
+    useEffect(() => {
+        if (!following || !streaming)
+            return;
+        setSelected(filtered.length - 1);
+        setOffset(Math.max(0, filtered.length - VISIBLE_ROWS));
+    }, [filtered.length, following, streaming]);
     useEffect(() => {
         if (debounceTimer.current)
             clearTimeout(debounceTimer.current);
