@@ -91,7 +91,6 @@ const program = new Command();
 program
     .name('logbeam')
     .description('Pretty-print and interactively search log output')
-    .version('0.1.0')
     .argument('[file]', 'log file to read (omit to read from stdin)')
     .option('--level <level>', 'minimum log level to show (trace|debug|info|warn|error)')
     .option('--since <duration>', 'only show logs from the last duration e.g. 10m, 1h, 2d')
