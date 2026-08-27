@@ -177,6 +177,7 @@ When testing changes, check pipe mode and TUI mode separately, and try all three
 
 ## Roadmap
 
+- [ ] Native CloudWatch Logs tailing (poll the API directly via the AWS SDK) — no `aws` CLI subprocess, no output-buffering delay
 - [ ] Absolute timestamp support for `--since` (e.g. `--since 2026-05-11T06:00:00Z`)
 - [ ] Highlight matched search terms in the log list
 - [ ] Custom colour themes
