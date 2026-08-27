@@ -6,6 +6,7 @@ import { render } from 'ink';
 import React from 'react';
 import { loadEntries, readLines } from './io/input.js';
 import { streamStdin, tailFile } from './io/stream.js';
+import { tailCloudWatchLogGroup } from './io/cloudwatch.js';
 import { detectFormat } from './core/parser.js';
 import { parseRelativeDuration, parseLevel, SEVERITY } from './core/filters.js';
 import { App } from './output/tui.js';
@@ -16,6 +17,12 @@ import { BUFFER_CAP } from './constants.js';
 interface PreFilterOptions {
   level?: string;
   since?: string;
+}
+
+interface CliOptions extends PreFilterOptions {
+  group?: string;
+  stream?: string;
+  region?: string;
 }
 
 function applyPreFilters(entries: LogEntry[], opts: PreFilterOptions): LogEntry[] {
@@ -86,7 +93,75 @@ function runStdinMode(opts: PreFilterOptions, inkStdin: NodeJS.ReadStream): void
   });
 }
 
-async function main(file: string | undefined, opts: PreFilterOptions): Promise<void> {
+function cloudWatchStartTime(opts: CliOptions): number | undefined {
+  if (!opts.since) return undefined;
+  return parseRelativeDuration(opts.since)?.getTime();
+}
+
+function runCloudWatchMode(opts: CliOptions, inkStdin: NodeJS.ReadStream): void {
+  const buffer = startInteractiveApp(inkStdin);
+  tailCloudWatchLogGroup(
+    opts.group!,
+    {
+      region: opts.region,
+      streamNamePrefix: opts.stream,
+      startTime: cloudWatchStartTime(opts),
+    },
+    (newEntries) => {
+      const filtered = applyPreFilters(newEntries, opts);
+      buffer.entries = [...buffer.entries, ...filtered].slice(-BUFFER_CAP);
+    },
+    (err) => {
+      console.error(`CloudWatch tail error: ${err.message}`);
+    },
+  );
+}
+
+async function printCloudWatchMode(opts: CliOptions): Promise<void> {
+  const { renderEntry } = await import('./output/renderer.js');
+  await new Promise<void>(() => {
+    tailCloudWatchLogGroup(
+      opts.group!,
+      {
+        region: opts.region,
+        streamNamePrefix: opts.stream,
+        startTime: cloudWatchStartTime(opts),
+      },
+      (newEntries) => {
+        const filtered = applyPreFilters(newEntries, opts);
+        for (const entry of filtered) process.stdout.write(renderEntry(entry) + '\n');
+      },
+      (err) => {
+        console.error(`CloudWatch tail error: ${err.message}`);
+      },
+    );
+  });
+}
+
+async function main(file: string | undefined, opts: CliOptions): Promise<void> {
+  if (opts.group && file) {
+    console.error('Error: --group cannot be combined with a file argument');
+    process.exit(1);
+  }
+  if (opts.stream && !opts.group) {
+    console.error('Error: --stream requires --group');
+    process.exit(1);
+  }
+
+  if (opts.group) {
+    if (!process.stdout.isTTY) {
+      await printCloudWatchMode(opts);
+      return;
+    }
+    const inkStdin = resolveInkStdin();
+    if (!inkStdin) {
+      await printCloudWatchMode(opts);
+      return;
+    }
+    runCloudWatchMode(opts, inkStdin);
+    return;
+  }
+
   if (!process.stdout.isTTY) {
     await readLines(file);
     return;
@@ -113,6 +188,9 @@ program
   .argument('[file]', 'log file to read (omit to read from stdin)')
   .option('--level <level>', 'minimum log level to show (trace|debug|info|warn|error)')
   .option('--since <duration>', 'only show logs from the last duration e.g. 10m, 1h, 2d')
-  .action((file?: string, opts: PreFilterOptions = {}) => main(file, opts));
+  .option('--group <name>', 'tail a CloudWatch log group directly (no aws CLI required)')
+  .option('--stream <name>', 'restrict --group to log streams with this name prefix')
+  .option('--region <region>', 'AWS region (defaults to the standard AWS SDK/CLI resolution chain)')
+  .action((file?: string, opts: CliOptions = {}) => main(file, opts));
 
 program.parse();

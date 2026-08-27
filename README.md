@@ -42,36 +42,42 @@ logbeam app.log --since 10m
 logbeam app.log --level error --since 1h
 ```
 
-## Piping from AWS CloudWatch
+## AWS CloudWatch
 
-Use `aws logs tail` with logbeam to tail CloudWatch log groups:
+`--group` tails a CloudWatch log group directly, by polling the CloudWatch Logs API — no `aws` CLI subprocess involved:
 
 ```bash
-PYTHONUNBUFFERED=1 aws logs tail /my/log-group --follow | logbeam
+logbeam --group /my/log-group
+logbeam --group /my/log-group --stream app-123        # only streams whose name starts with app-123
+logbeam --group /my/log-group --region ap-southeast-2 # defaults to the standard AWS SDK/CLI region resolution
+logbeam --group /my/log-group --since 10m             # include the last 10 minutes of history, then keep following
 ```
 
-The `PYTHONUNBUFFERED=1` prefix is required when using `--follow`. Without it, the AWS CLI (a Python 3 program) switches to block-buffered output when writing to a pipe — it accumulates ~8 KB before flushing, so logbeam receives nothing until the buffer fills or the process exits. `PYTHONUNBUFFERED=1` forces Python to flush immediately after each write.
+Credentials and region resolve the same way the AWS CLI does (env vars, `~/.aws/config`, instance/role credentials, etc). `--group` can't be combined with a `[file]` argument, and `--stream` requires `--group`.
 
-Note: `stdbuf -oL` is commonly suggested for this problem but **does not work with Python 3** — Python 3 uses its own I/O layer that bypasses C stdio, so `stdbuf`'s libc patch has no effect. Use `PYTHONUNBUFFERED=1` instead.
-
-This only affects Python-based CLI tools. Other common sources (`tail -f`, `kubectl logs -f`, `docker logs -f`) are unaffected.
+You can still pipe from `aws logs tail` if you prefer:
 
 ```bash
-# Add to ~/.zshrc or ~/.bashrc for convenience
-alias logbeam-tail='PYTHONUNBUFFERED=1 aws logs tail'
+aws logs tail /my/log-group --follow | logbeam
+```
 
-# Then:
-logbeam-tail /my/log-group --follow | logbeam
+**Known limitation:** with `--follow`, the AWS CLI fully buffers its own stdout whenever it isn't attached to a real terminal — which is always true when piped into logbeam — so output can be delayed well beyond when it actually matched in CloudWatch, sometimes indefinitely on a low-volume stream. This is buffering behaviour internal to the AWS CLI binary itself; logbeam has no visibility into it. `logbeam --group ...` above avoids the problem entirely by not shelling out to the CLI at all. For a quick one-off check that isn't affected by this either, drop `--follow` — the AWS CLI returns matching historical events immediately and exits:
+
+```bash
+aws logs tail /my/log-group --since 10m | logbeam
 ```
 
 ## CLI Flags
 
-| Flag                 | Description                                                                             |
-| -------------------- | --------------------------------------------------------------------------------------- |
-| `--level <level>`    | Minimum log level to show: `trace`, `debug`, `info`, `warn`, `error`                    |
-| `--since <duration>` | Only show logs from the last N seconds/minutes/hours/days e.g. `30s`, `10m`, `2h`, `1d` |
+| Flag                  | Description                                                                                    |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| `--level <level>`      | Minimum log level to show: `trace`, `debug`, `info`, `warn`, `error`                            |
+| `--since <duration>`   | Only show logs from the last N seconds/minutes/hours/days e.g. `30s`, `10m`, `2h`, `1d`         |
+| `--group <name>`       | Tail a CloudWatch log group directly (see [AWS CloudWatch](#aws-cloudwatch))                    |
+| `--stream <name>`      | Restrict `--group` to log streams whose name starts with this prefix                            |
+| `--region <region>`    | AWS region for `--group` (defaults to the standard AWS SDK/CLI resolution chain)                |
 
-**Known limitation:** `--level` and `--since` currently only apply in the interactive TUI. In pipe mode (output not a TTY, e.g. `logbeam app.log | grep foo`), both flags are ignored and every line is printed.
+**Known limitation:** `--level` and `--since` currently only apply in the interactive TUI. In pipe mode (output not a TTY, e.g. `logbeam app.log | grep foo`), both flags are ignored and every line is printed. This applies to `--group` mode too.
 
 ## TUI Controls
 
@@ -176,6 +182,11 @@ When testing changes, check pipe mode and TUI mode separately, and try all three
 - [ ] Custom colour themes
 
 ## Changelog
+
+### Unreleased
+
+**Feature: native CloudWatch Logs tailing**
+Added `--group` (with optional `--stream` and `--region`) to poll CloudWatch Logs directly via the AWS SDK, instead of piping from the `aws` CLI. Sidesteps the `aws logs tail --follow` output-buffering delay entirely (see [AWS CloudWatch](#aws-cloudwatch)) since there's no subprocess involved.
 
 ### 0.1.3
 
