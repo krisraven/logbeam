@@ -47,21 +47,15 @@ logbeam app.log --level error --since 1h
 Use `aws logs tail` with logbeam to tail CloudWatch log groups:
 
 ```bash
-PYTHONUNBUFFERED=1 aws logs tail /my/log-group --follow | logbeam
+aws logs tail /my/log-group --follow | logbeam
 ```
 
-The `PYTHONUNBUFFERED=1` prefix is required when using `--follow`. Without it, the AWS CLI (a Python 3 program) switches to block-buffered output when writing to a pipe — it accumulates ~8 KB before flushing, so logbeam receives nothing until the buffer fills or the process exits. `PYTHONUNBUFFERED=1` forces Python to flush immediately after each write.
+**Known limitation:** with `--follow`, the AWS CLI fully buffers its own stdout whenever it isn't attached to a real terminal — which is always true when piped into logbeam — so output can be delayed well beyond when it actually matched in CloudWatch, sometimes indefinitely on a low-volume stream. This is a buffering behaviour internal to the AWS CLI binary itself; logbeam has no visibility into it and no piped command can force it to flush from the outside. Native, non-piped CloudWatch support (no buffering, no `aws` CLI dependency for this path) is on the [roadmap](#roadmap).
 
-Note: `stdbuf -oL` is commonly suggested for this problem but **does not work with Python 3** — Python 3 uses its own I/O layer that bypasses C stdio, so `stdbuf`'s libc patch has no effect. Use `PYTHONUNBUFFERED=1` instead.
-
-This only affects Python-based CLI tools. Other common sources (`tail -f`, `kubectl logs -f`, `docker logs -f`) are unaffected.
+For a quick one-off check that isn't affected by this, drop `--follow` — the AWS CLI returns matching historical events immediately and exits:
 
 ```bash
-# Add to ~/.zshrc or ~/.bashrc for convenience
-alias logbeam-tail='PYTHONUNBUFFERED=1 aws logs tail'
-
-# Then:
-logbeam-tail /my/log-group --follow | logbeam
+aws logs tail /my/log-group --since 10m | logbeam
 ```
 
 ## CLI Flags
@@ -171,11 +165,17 @@ When testing changes, check pipe mode and TUI mode separately, and try all three
 
 ## Roadmap
 
+- [ ] Native CloudWatch Logs tailing (poll the API directly via the AWS SDK) — no `aws` CLI subprocess, no output-buffering delay
 - [ ] Absolute timestamp support for `--since` (e.g. `--since 2026-05-11T06:00:00Z`)
 - [ ] Highlight matched search terms in the log list
 - [ ] Custom colour themes
 
 ## Changelog
+
+### Unreleased
+
+**Fix: `aws logs tail` output parsed as garbage**
+`aws logs tail` (without `--format json`/`short`) prefixes every line with its own timestamp and the source log stream name before the actual log payload, e.g. `2026-08-27T04:50:54.215000+00:00 app-123 {"level":"info",...}`. logbeam's format detector was scoring that whole line against JSON/logfmt, never matching either, and falling back to plain-text parsing — so `level` came back empty and `message` ended up containing the raw, still-unparsed JSON blob. Format detection and per-line parsing now strip that prefix (recognised by its distinctive microsecond-precision, explicit-UTC-offset timestamp) before scoring/parsing, so JSON and logfmt payloads inside it are detected and extracted correctly. The original full line (prefix included) is still preserved for copy/export.
 
 ### 0.1.3
 

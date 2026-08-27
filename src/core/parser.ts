@@ -46,6 +46,22 @@ function parseTimestamp(raw: unknown): string | null {
         .replace(/\.\d{3}Z$/, "Z");
 }
 
+// `aws logs tail` (without --format json/short) prefixes every line with its
+// own timestamp and the source log stream name, e.g.:
+//   2026-08-27T04:50:54.215000+00:00 app-1787806253936 {"level":"info",...}
+// The microsecond precision + explicit numeric UTC offset (rather than "Z")
+// is a signature of Python's datetime.isoformat(), which is specific enough
+// to this tool's output that it's safe to strip without misfiring on
+// ordinary application log lines (which almost always use "Z" or
+// millisecond precision instead).
+const AWS_LOGS_TAIL_PREFIX =
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}\s+\S+\s+([\s\S]*)$/;
+
+function stripAwsLogsTailPrefix(line: string): string {
+    const match = line.match(AWS_LOGS_TAIL_PREFIX);
+    return match ? match[1] : line;
+}
+
 function scoreJson(lines: string[]): number {
     const hits = lines.filter((l) => {
         try {
@@ -66,7 +82,9 @@ function scoreLogfmt(lines: string[]): number {
 }
 
 export function detectFormat(sample: string[]): Format {
-    const nonEmpty = sample.filter((l) => l.trim().length > 0);
+    const nonEmpty = sample
+        .map(stripAwsLogsTailPrefix)
+        .filter((l) => l.trim().length > 0);
     if (nonEmpty.length === 0) return "text";
     const jsonScore = scoreJson(nonEmpty);
     const logfmtScore = scoreLogfmt(nonEmpty);
@@ -151,11 +169,18 @@ function parsePlainLine(line: string): LogEntry {
 export function parseLine(line: string, format: Format): LogEntry | null {
     const trimmed = line.trim();
     if (!trimmed) return null;
+    const content = stripAwsLogsTailPrefix(trimmed);
+    let entry: LogEntry;
     try {
-        if (format === "json") return parseJsonLine(trimmed);
-        if (format === "logfmt") return parseLogfmtLine(trimmed);
-        return parsePlainLine(trimmed);
+        entry =
+            format === "json"
+                ? parseJsonLine(content)
+                : format === "logfmt"
+                  ? parseLogfmtLine(content)
+                  : parsePlainLine(content);
     } catch {
-        return parsePlainLine(trimmed);
+        entry = parsePlainLine(content);
     }
+    entry.raw = trimmed;
+    return entry;
 }
