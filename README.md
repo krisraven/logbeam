@@ -42,17 +42,26 @@ logbeam app.log --since 10m
 logbeam app.log --level error --since 1h
 ```
 
-## Piping from AWS CloudWatch
+## AWS CloudWatch
 
-Use `aws logs tail` with logbeam to tail CloudWatch log groups:
+`--group` tails a CloudWatch log group directly, by polling the CloudWatch Logs API — no `aws` CLI subprocess involved:
+
+```bash
+logbeam --group /my/log-group
+logbeam --group /my/log-group --stream app-123        # only streams whose name starts with app-123
+logbeam --group /my/log-group --region ap-southeast-2 # defaults to the standard AWS SDK/CLI region resolution
+logbeam --group /my/log-group --since 10m             # include the last 10 minutes of history, then keep following
+```
+
+Credentials and region resolve the same way the AWS CLI does (env vars, `~/.aws/config`, instance/role credentials, etc). `--group` can't be combined with a `[file]` argument, and `--stream` requires `--group`.
+
+You can still pipe from `aws logs tail` if you prefer:
 
 ```bash
 aws logs tail /my/log-group --follow | logbeam
 ```
 
-**Known limitation:** with `--follow`, the AWS CLI fully buffers its own stdout whenever it isn't attached to a real terminal — which is always true when piped into logbeam — so output can be delayed well beyond when it actually matched in CloudWatch, sometimes indefinitely on a low-volume stream. This is a buffering behaviour internal to the AWS CLI binary itself; logbeam has no visibility into it and no piped command can force it to flush from the outside. Native, non-piped CloudWatch support (no buffering, no `aws` CLI dependency for this path) is on the [roadmap](#roadmap).
-
-For a quick one-off check that isn't affected by this, drop `--follow` — the AWS CLI returns matching historical events immediately and exits:
+**Known limitation:** with `--follow`, the AWS CLI fully buffers its own stdout whenever it isn't attached to a real terminal — which is always true when piped into logbeam — so output can be delayed well beyond when it actually matched in CloudWatch, sometimes indefinitely on a low-volume stream. This is buffering behaviour internal to the AWS CLI binary itself; logbeam has no visibility into it. `logbeam --group ...` above avoids the problem entirely by not shelling out to the CLI at all. For a quick one-off check that isn't affected by this either, drop `--follow` — the AWS CLI returns matching historical events immediately and exits:
 
 ```bash
 aws logs tail /my/log-group --since 10m | logbeam
@@ -60,12 +69,15 @@ aws logs tail /my/log-group --since 10m | logbeam
 
 ## CLI Flags
 
-| Flag                 | Description                                                                             |
-| -------------------- | --------------------------------------------------------------------------------------- |
-| `--level <level>`    | Minimum log level to show: `trace`, `debug`, `info`, `warn`, `error`                    |
-| `--since <duration>` | Only show logs from the last N seconds/minutes/hours/days e.g. `30s`, `10m`, `2h`, `1d` |
+| Flag                  | Description                                                                                    |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| `--level <level>`      | Minimum log level to show: `trace`, `debug`, `info`, `warn`, `error`                            |
+| `--since <duration>`   | Only show logs from the last N seconds/minutes/hours/days e.g. `30s`, `10m`, `2h`, `1d`         |
+| `--group <name>`       | Tail a CloudWatch log group directly (see [AWS CloudWatch](#aws-cloudwatch))                    |
+| `--stream <name>`      | Restrict `--group` to log streams whose name starts with this prefix                            |
+| `--region <region>`    | AWS region for `--group` (defaults to the standard AWS SDK/CLI resolution chain)                |
 
-**Known limitation:** `--level` and `--since` currently only apply in the interactive TUI. In pipe mode (output not a TTY, e.g. `logbeam app.log | grep foo`), both flags are ignored and every line is printed.
+**Known limitation:** `--level` and `--since` currently only apply in the interactive TUI. In pipe mode (output not a TTY, e.g. `logbeam app.log | grep foo`), both flags are ignored and every line is printed. This applies to `--group` mode too.
 
 ## TUI Controls
 
@@ -174,8 +186,8 @@ When testing changes, check pipe mode and TUI mode separately, and try all three
 
 ### Unreleased
 
-**Fix: `aws logs tail` output parsed as garbage**
-`aws logs tail` (without `--format json`/`short`) prefixes every line with its own timestamp and the source log stream name before the actual log payload, e.g. `2026-08-27T04:50:54.215000+00:00 app-123 {"level":"info",...}`. logbeam's format detector was scoring that whole line against JSON/logfmt, never matching either, and falling back to plain-text parsing — so `level` came back empty and `message` ended up containing the raw, still-unparsed JSON blob. Format detection and per-line parsing now strip that prefix (recognised by its distinctive microsecond-precision, explicit-UTC-offset timestamp) before scoring/parsing, so JSON and logfmt payloads inside it are detected and extracted correctly. The original full line (prefix included) is still preserved for copy/export.
+**Feature: native CloudWatch Logs tailing**
+Added `--group` (with optional `--stream` and `--region`) to poll CloudWatch Logs directly via the AWS SDK, instead of piping from the `aws` CLI. Sidesteps the `aws logs tail --follow` output-buffering delay entirely (see [AWS CloudWatch](#aws-cloudwatch)) since there's no subprocess involved.
 
 ### 0.1.3
 
